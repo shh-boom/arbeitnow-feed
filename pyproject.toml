@@ -1,0 +1,10 @@
+[project]
+name = "arbeitnow-feed"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "confluent-kafka>=2.16.0",
+    "requests>=2.34.2",
+]

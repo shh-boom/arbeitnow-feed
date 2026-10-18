@@ -1,0 +1,152 @@
+
+services:
+  ed-pyspark-jupyter:
+    image: easewithdata/pyspark-jupyter-lab
+    user: root
+    container_name: ed-pyspark-jupyter-lab
+    command: >
+      /bin/bash -lc "python3 -m ipykernel install --user --name pyspark-docker --display-name 'PySpark (Docker)' &&
+      python3 -m jupyterlab
+      --ip=0.0.0.0
+      --allow-root
+      --ServerApp.token=''
+      --ServerApp.password=''
+      --IdentityProvider.token=''
+      --ServerApp.disable_check_xsrf=True"
+    ports:
+      - 8888:8888
+      - 4040:4040
+    environment:
+      JUPYTER_PORT: 8888
+      SPARK_UI_PORT: 4040
+      GRANT_SUDO: yes
+    volumes:
+      - streaming_data:/data:rw
+      - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/exercise:/home/jupyter/exercise:rw
+      - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/spark-streaming-with-pyspark-fork:/home/jupyter/spark-streaming-with-pyspark-fork:rw
+      - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/ease-with-apache-spark:/home/jupyter/ease-with-apache-spark:rw
+      - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/.jupyter:/root/.local/share/jupyter:rw
+
+  postgresql:
+    image: postgres:14
+    hostname: postgresql
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: "conduktor-console"
+      POSTGRES_USER: "conduktor"
+      POSTGRES_PASSWORD: "some_password"
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+  conduktor-console:
+    image: conduktor/conduktor-console:1.36.2
+    ports:
+      - "8080:8080"
+    volumes:
+      - conduktor_data:/var/conduktor
+    environment:
+      CDK_DATABASE_URL: "postgresql://conduktor:some_password@postgresql:5432/conduktor-console"
+      CDK_CLUSTERS_0_ID: "default"
+      CDK_CLUSTERS_0_NAME: "My Local Kafka Cluster"
+      CDK_CLUSTERS_0_COLOR: "#0013E7"
+      # CDK_CLUSTERS_0_BOOTSTRAPSERVERS: "PLAINTEXT://cf-kafka-1:19092"
+      CDK_CLUSTERS_0_BOOTSTRAPSERVERS: "INTERNAL://cf-kafka-1:19092"
+
+  cf-zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+    ports:
+      - "2181:2181"
+
+  cf-kafka-1:
+    image: confluentinc/cp-kafka:7.5.0
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://cf-kafka-1:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "cf-zookeeper:2181"
+      KAFKA_BROKER_ID: 1
+    depends_on:
+      - cf-zookeeper
+
+  cf-kafka-2:
+    image: confluentinc/cp-kafka:7.5.0
+    ports:
+      - "9093:9093"
+      - "29093:29093"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://cf-kafka-2:19093,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093,DOCKER://host.docker.internal:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "cf-zookeeper:2181"
+      KAFKA_BROKER_ID: 2
+    depends_on:
+      - cf-zookeeper
+
+  cf-kafka-3:
+    image: confluentinc/cp-kafka:7.5.0
+    ports:
+      - "9094:9094"
+      - "29094:29094"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://cf-kafka-3:19094,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9094,DOCKER://host.docker.internal:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "cf-zookeeper:2181"
+      KAFKA_BROKER_ID: 3
+    depends_on:
+      - cf-zookeeper
+
+
+  db:
+    image: postgres:17.6
+    container_name: postgres-db
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: sqlpad
+      POSTGRES_PASSWORD: sqlpad
+
+  sqlpad:
+    image: sqlpad/sqlpad:5
+    hostname: 'sqlpad'
+    container_name: sqlpad
+    ports:
+      - '3000:3000'
+    environment:
+      SQLPAD_ADMIN: 'admin@sqlpad.com'
+      SQLPAD_ADMIN_PASSWORD: 'admin'
+      SQLPAD_APP_LOG_LEVEL: debug
+      SQLPAD_WEB_LOG_LEVEL: warn
+      SQLPAD_SEED_DATA_PATH: /etc/sqlpad/seed-data
+      SQLPAD_CONNECTIONS__pgdemo__name: Postgres
+      SQLPAD_CONNECTIONS__pgdemo__driver: postgres
+      SQLPAD_CONNECTIONS__pgdemo__host: postgres-db
+      SQLPAD_CONNECTIONS__pgdemo__database: sqlpad
+      SQLPAD_CONNECTIONS__pgdemo__username: sqlpad
+      SQLPAD_CONNECTIONS__pgdemo__password: sqlpad
+      SQLPAD_CONNECTIONS__pgdemo__multiStatementTransactionEnabled: 'true'
+      SQLPAD_CONNECTIONS__pgdemo__idleTimeoutSeconds: 86400
+    volumes:
+      - ./seed-data:/etc/sqlpad/seed-data
+
+  ed-mongodb:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: mongoadmin
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodata:/data/db
+
+volumes:
+  streaming_data:
+  mongodata:
+    driver: local
+  pg_data: {}
+  conduktor_data: {}
