@@ -26,6 +26,6 @@ Thumbs.db
 htmlcov/
 .coverage
 # Kafka docker-compose generated
-kafka1/data/
-kafka2/data/
-kafka3/data/
+**/kafka1/data/
+**/kafka2/data/
+**/kafka3/data/
