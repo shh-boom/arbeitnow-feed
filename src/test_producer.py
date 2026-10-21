@@ -5,6 +5,7 @@ import time
 from confluent_kafka import Producer
 
 BOOTSTRAP_SERVERS = "localhost:9092,localhost:9094,localhost:9096"
+# BOOTSTRAP_SERVERS = "kafka2:9092"
 TOPIC = "clickstream-events"
 
 EVENT_TYPES = ["page_view", "search", "add_to_cart", "purchase_completed"]
