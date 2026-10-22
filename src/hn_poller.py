@@ -15,6 +15,7 @@ import json
 import os
 import time
 from datetime import datetime, timezone
+from hn_producer import produce_record
 
 import requests
 
@@ -22,7 +23,7 @@ import hn_client
 
 # Configuration. Environment variables override the defaults.
 POLL_INTERVAL_SEC = int(os.environ.get("POLL_INTERVAL_SEC", "60"))
-BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "20"))
+BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "200"))
 FEED = os.environ.get("FEED", "newstories")
 
 # Paths are relative to the project root (the parent of src/).
@@ -36,7 +37,15 @@ def load_seen_ids():
     if not os.path.exists(STATE_PATH):
         return set()
     with open(STATE_PATH, "r", encoding="utf-8") as f:
-        return set(json.load(f))
+        try:
+            contents = f.read().strip()
+            if not contents:
+                return set()
+            return set(json.loads(contents))
+        except json.JSONDecodeError:
+            return set()
+
+        # return set(json.load(f))
 
 
 def save_seen_ids(seen_ids):
@@ -97,6 +106,7 @@ def poll_once(seen_ids):
         record = to_record(item)
         print_record(record)
         append_record(record)
+        produce_record(record)
         written += 1
 
     if new_ids:

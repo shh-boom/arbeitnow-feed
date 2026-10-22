@@ -1,0 +1,30 @@
+services:
+  ed-pyspark-jupyter:
+    image: easewithdata/pyspark-jupyter-lab
+    user: root
+    container_name: ed-pyspark-jupyter-lab
+    command: >
+      /bin/bash -lc "python3 -m ipykernel install --user --name pyspark-docker --display-name 'PySpark (Docker)' &&
+      python3 -m jupyterlab
+      --ip=0.0.0.0
+      --allow-root
+      --ServerApp.token=''
+      --ServerApp.password=''
+      --IdentityProvider.token=''
+      --ServerApp.disable_check_xsrf=True"
+    ports:
+      - 8888:8888
+      - 4040:4040
+    environment:
+      JUPYTER_PORT: 8888
+      SPARK_UI_PORT: 4040
+      GRANT_SUDO: yes
+    volumes:
+      - streaming_data:/data:rw
+      # - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/exercise:/home/jupyter/exercise:rw
+      # - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/spark-streaming-with-pyspark-fork:/home/jupyter/spark-streaming-with-pyspark-fork:rw
+      # - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/ease-with-apache-spark:/home/jupyter/ease-with-apache-spark:rw
+      - ./pyspark-jupyter-kafka/.jupyter:/root/.local/share/jupyter:rw
+
+volumes:
+  streaming_data:

@@ -16,13 +16,13 @@ import json
 import os
 import time
 from datetime import datetime, timezone
-
+from arbeitnow_producer import produce_record
 import requests
 
 import arbeitnow_client
 
 # Configuration. Environment variables override the defaults.
-POLL_INTERVAL_SEC = int(os.environ.get("POLL_INTERVAL_SEC", "10"))
+POLL_INTERVAL_SEC = int(os.environ.get("POLL_INTERVAL_SEC", "60"))
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "200"))
 REMOTE_ONLY = os.environ.get("REMOTE_ONLY", "").strip() in ("1", "true", "True", "yes")
 
@@ -107,6 +107,7 @@ def poll_once(seen_slugs):
         record = to_record(job)
         print_record(record)
         append_record(record)
+        produce_record(record)
         written += 1
 
     if new_jobs:

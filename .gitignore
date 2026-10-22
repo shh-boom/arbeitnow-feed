@@ -29,3 +29,5 @@ htmlcov/
 **/kafka1/data/
 **/kafka2/data/
 **/kafka3/data/
+**/kafka-cluster-kraft/pyspark-jupyter-kafka/
+./data/*
