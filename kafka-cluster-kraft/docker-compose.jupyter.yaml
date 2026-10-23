@@ -1,8 +1,18 @@
 services:
   ed-pyspark-jupyter:
     image: easewithdata/pyspark-jupyter-lab
+    # Apple Silicon: use native arm64. amd64-under-emulation breaks ipykernel
+    # (kernel heartbeats but never answers kernel_info / code execution).
+    platform: linux/arm64
     user: root
     container_name: ed-pyspark-jupyter-lab
+    # Container starts
+    # Command runs ipykernel install ...
+    # Recipe folder pyspark-docker is created in Docker kernels path
+    # Because that path is volume-mounted, recipe also appears on your Mac
+    # Jupyter Lab starts and shows PySpark (Docker)
+    # When you Run a cell, Docker launches a live kernel from that recipe
+    # Your notebook file on Mac updates with results
     command: >
       /bin/bash -lc "python3 -m ipykernel install --user --name pyspark-docker --display-name 'PySpark (Docker)' &&
       python3 -m jupyterlab
@@ -19,12 +29,14 @@ services:
       JUPYTER_PORT: 8888
       SPARK_UI_PORT: 4040
       GRANT_SUDO: yes
+      # Keep kernel IPC off the macOS bind mount — host-mounted runtime
+      # commonly breaks ipykernel on OrbStack/Docker Desktop (office Mac).
+      JUPYTER_RUNTIME_DIR: /tmp/jupyter_runtime
     volumes:
       - streaming_data:/data:rw
-      # - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/exercise:/home/jupyter/exercise:rw
-      # - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/spark-streaming-with-pyspark-fork:/home/jupyter/spark-streaming-with-pyspark-fork:rw
-      # - /Users/shubhamburbure/Study/pyspark-docker-images-fork/pyspark-jupyter-kafka/ease-with-apache-spark:/home/jupyter/ease-with-apache-spark:rw
-      - ./pyspark-jupyter-kafka/.jupyter:/root/.local/share/jupyter:rw
+      - ./pyspark-scripts-tutorial/ease-with-apache-spark-master:/home/jupyter:rw
+      # Persist kernelspecs only; do NOT mount runtime/ onto the host.
+      - ./pyspark-jupyter-kafka/.jupyter/kernels:/root/.local/share/jupyter/kernels:rw
 
 volumes:
   streaming_data:

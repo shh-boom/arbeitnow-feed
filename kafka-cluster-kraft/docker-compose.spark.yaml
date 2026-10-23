@@ -8,6 +8,7 @@ services:
       - "7077:7077"
     environment:
       - INIT_DAEMON_STEP=setup_spark
+      - SPARK_MASTER_HOST=bd-spark-master
     volumes:
         - spark_data:/data:rw
 
@@ -21,6 +22,8 @@ services:
       - "8081:8081"
     environment:
       - "SPARK_MASTER=spark://bd-spark-master:7077"
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
     volumes:
         - spark_data:/data:rw
         
@@ -35,6 +38,8 @@ services:
       - "8082:8081"
     environment:
       - "SPARK_MASTER=spark://bd-spark-master:7077"
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_MEMORY=2g
     volumes:
         - spark_data:/data:rw
 
